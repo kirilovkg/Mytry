@@ -42,7 +42,7 @@ let CONFIG = {
   {
     conditions: {
       event: "shelly-blu",
-      address: "0c:ef:f6:b7:ec:29", // Replace with your device MAC
+      address: "00:ef:f6:b7:ec:00", // Replace with your device MAC
       button: {
         compare: "==", // Exact match for 1 click
         value: 1,
@@ -58,7 +58,7 @@ let CONFIG = {
   {
     conditions: {
       event: "shelly-blu",
-      address: "0c:ef:f6:b7:ec:29", // Same device MAC
+      address: "00:ef:f6:b7:ec:00", // Same device MAC
       button: {
         compare: "==", // Exact match for 2 clicks
         value: 2,
