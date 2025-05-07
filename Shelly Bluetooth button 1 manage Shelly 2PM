@@ -1,0 +1,132 @@
+const BUTTON_MAC = "mac addres of your button"; 
+const DEBUG = true; 
+
+
+const BTHOME_SVC_ID = "fcd2";
+const BUTTON_EVENT_TYPE = 0x3a;
+
+
+function log(message) {
+  if (DEBUG) print("[BLU Control] " + message);
+}
+
+
+function toggleRelay(index) {
+  try {
+    let currentState = Shelly.getComponentStatus("switch:" + index).output;
+    let newState = !currentState;
+    Shelly.call("Switch.Toggle", {id: index, on: newState});
+    log("Relay " + (index + 1) + " changed from " + 
+        (currentState ? "ON" : "OFF") + " to " + 
+        (newState ? "ON" : "OFF"));
+  } catch (e) {
+    print("Error toggling relay " + (index + 1) + ": " + e);
+  }
+}
+
+function turnAllOff() {
+  Shelly.call("Switch.Set", {id: 0, on: false});
+  Shelly.call("Switch.Set", {id: 1, on: false});
+  log("Both relays turned OFF");
+}
+
+
+const BTHomeDecoder = {
+  unpack: function(buffer) {
+    if (typeof buffer !== "string" || buffer.length < 2) return null;
+    
+    const flags = buffer.at(0);
+    const version = flags >> 5;
+    const encrypted = flags & 0x01;
+    
+    if (version !== 2 || encrypted) return null;
+    
+    let result = {};
+    let pos = 1;
+    
+    while (pos < buffer.length) {
+      const type = buffer.at(pos++);
+      if (type === BUTTON_EVENT_TYPE && pos < buffer.length) {
+        result.button = buffer.at(pos++);
+        return result;
+      }
+      pos += 1;
+    }
+    return null;
+  }
+};
+
+
+let lastEventTime = 0;
+const DEBOUNCE_TIME = 500; 
+
+function handleButtonEvent(deviceData, buttonData) {
+  const now = Date.now();
+  if (now - lastEventTime < DEBOUNCE_TIME) {
+    log("Ignoring duplicate button event (debounce)");
+    return;
+  }
+  lastEventTime = now;
+  
+  log("Button event from " + deviceData.addr + ": " + buttonData.button);
+  
+  switch(buttonData.button) {
+    case 1: 
+      toggleRelay(0);
+      break;
+    case 2: 
+      toggleRelay(1);
+      break;
+    case 3: 
+    case 4: 
+      turnAllOff();
+      break;
+    default:
+      log("Unknown button event: " + buttonData.button);
+  }
+}
+
+
+function scanCallback(ev, res) {
+  if (ev !== BLE.Scanner.SCAN_RESULT) return;
+  if (!res.service_data || !res.service_data[BTHOME_SVC_ID]) return;
+  if (res.addr.toLowerCase() !== BUTTON_MAC.toLowerCase()) return;
+  
+  const buttonData = BTHomeDecoder.unpack(res.service_data[BTHOME_SVC_ID]);
+  if (!buttonData || !buttonData.button) return;
+  
+  handleButtonEvent({
+    addr: res.addr,
+    rssi: res.rssi
+  }, buttonData);
+}
+
+
+function init() {
+  try {
+    if (!Shelly.getComponentConfig("ble").enable) {
+      throw new Error("Bluetooth is disabled");
+    }
+
+    if (!BLE.Scanner.isRunning()) {
+      const scanParams = {
+        duration_ms: BLE.Scanner.INFINITE_SCAN,
+        active: true
+      };
+      
+      if (!BLE.Scanner.Start(scanParams)) {
+        throw new Error("Failed to start BLE scanner");
+      }
+    }
+    
+    BLE.Scanner.Subscribe(scanCallback);
+    log("Initialized. Waiting for button events from " + BUTTON_MAC);
+    log("1 Click: Toggle Relay 1 | 2 Clicks: Toggle Relay 2 | Long Press: Both OFF");
+    
+  } catch (e) {
+    print("Initialization error: " + e.message);
+  }
+}
+
+
+init();
