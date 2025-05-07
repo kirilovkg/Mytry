@@ -72,10 +72,26 @@ let CONFIG = {
     /** SCENE START 3 - Shelly BLU Scanner example **/
     {
       // when event name is `shelly-blu`
-      conditions: {
+      conditions: { 
         event: "shelly-blu",
+        address: "00:ef:f6:b7:ec:00", // Same device MAC
+        button: {
+        compare: "==", // Exact match for long press
+        value: 4,
       },
+    },
+    action: function (data) {
+      console.log("Double click detected");
+      Shelly.call("Switch.Set", { id: 0, on: false }); 
+      Shelly.call("Switch.Set", { id: 1, on: false });  
+    },
+  },
 
+
+
+    
+        event: "shelly-blu",
+      },    
       action: function (data) {
         // prints the data parsed from Shelly blu device
         console.log("Shelly BLU device found", JSON.stringify(data));
