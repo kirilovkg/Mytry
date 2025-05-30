@@ -58,7 +58,7 @@ Timer.set(5000, true, function () {
         sendLedConfig([0, 0, 0], [100, 100, 0]);
       } else {
         // Red all relay OFF
-        sendLedConfig([0, 0, 0], [0, 0, 0]);
+        sendLedConfig([100, 0, 0], [100, 0, 0]);
       }
     });
   });
