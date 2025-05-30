@@ -1,4 +1,4 @@
-let SHELLY_TARGET_IP = "192.168.0.70";  // IP на външното Shelly
+let SHELLY_TARGET_IP = "Shelly_2PM_IP";  // IP target Shelly Plug S
 
 function sendLedConfig(rgb0, rgb1) {
   let payload = {
@@ -37,7 +37,7 @@ function sendLedConfig(rgb0, rgb1) {
   );
 }
 
-// Проверява състоянието на двете релета и променя цвета
+// Check 2 relays current status
 Timer.set(5000, true, function () {
   Shelly.call("Switch.GetStatus", { id: 0 }, function (res0) {
     let isOn0 = res0.output;
@@ -48,16 +48,16 @@ Timer.set(5000, true, function () {
       print("Реле 0:", isOn0, "| Реле 1:", isOn1);
 
       if (isOn0 && isOn1) {
-        // Зеленo: двете включени
+        // Green 2 relas ON
         sendLedConfig([0, 100, 0], [0, 100, 0]);
       } else if (isOn0 && !isOn1) {
-        // Синьо: само реле 0
+        // Blue relay 0 ON
         sendLedConfig([0, 0, 100], [0, 0, 0]);
       } else if (!isOn0 && isOn1) {
-        // Жълто: само реле 1
+        // Yellow relay 1 ON
         sendLedConfig([0, 0, 0], [100, 100, 0]);
       } else {
-        // Всичко изключено
+        // Red all relay OFF
         sendLedConfig([0, 0, 0], [0, 0, 0]);
       }
     });
