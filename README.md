@@ -1,1 +1,1 @@
-I have tryed to make Shelly devices to work with Shelly BLU Buttons and Sensors. All works great and is tested on home. Can be used to command 2 different releys with buttons or turn on lights on long entrance with 2 sensors.
+I have tryed to make Shelly devices to work with Shelly BLU Buttons and Sensors. All works great and is tested at home. Can be used to command 2 different releys with buttons or turn on lights on long entrance with 2 sensors.
