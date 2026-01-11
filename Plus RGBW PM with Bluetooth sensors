@@ -1,0 +1,89 @@
+
+const MOTION_SENSORS = [
+  "f4:b3:b1:fa:14:7f".toLowerCase(),
+  "a0:63:b6:18:99:61".toLowerCase()
+];
+
+const OFF_DELAY = 40000; // 40 sec 
+let offTimer = null;
+
+/************ BLE HANDLER ************/
+function bleEventHandler(event, result) {
+  if (!result || typeof result !== "object" || !result.addr) return;
+  if (event !== BLE.Scanner.SCAN_RESULT) return;
+  
+  let deviceAddr = result.addr.toLowerCase();
+  let isTargetSensor = false;
+  
+  for (let i = 0; i < MOTION_SENSORS.length; i++) {
+    if (MOTION_SENSORS[i] === deviceAddr) {
+      isTargetSensor = true;
+      break;
+    }
+  }
+
+  if (!isTargetSensor) return;
+  if (!result.service_data || !result.service_data.fcd2) return;
+  
+  const data = decodeBTHomeMotion(result.service_data.fcd2);
+  
+  // Move sensor 1 (motion === 1)
+  if (data && data.motion === 1) {
+    print(">>> Move from: " + deviceAddr + ". Light stay ON.");
+    
+    // 1.Turn ON (if it's turned satays on)
+    controlLight(true);
+    
+    // 2. Restart timer
+    if (offTimer) Timer.clear(offTimer);
+    
+    // 3. Timer after 40 sec without motion
+    offTimer = Timer.set(OFF_DELAY, false, function() {
+      print(">>> 40 secons no movement, turning OFF...");
+      controlLight(false);
+      offTimer = null; // Zero timer
+    });
+  }
+}
+
+/************ MOTION DECODER ************/
+function decodeBTHomeMotion(buffer) {
+  try {
+    if (typeof buffer !== "string" || buffer.length < 3) return null;
+    let pos = 1;
+    while (pos < buffer.length) {
+      const type = buffer.charCodeAt(pos++);
+      if (type === 0x21 && pos < buffer.length) {
+        return { motion: buffer.charCodeAt(pos++) };
+      }
+      pos += 1;
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
+/************ RGBW CONTROL ************/
+function controlLight(on) {
+  Shelly.call("RGBW.Set", {
+    id: 0,
+    on: on,
+    red: 255,   // turn on RED
+    green: 0,
+    blue: 0,
+    white: 0,
+    gain: 100
+  });
+}
+
+/************ INITIALIZATION ************/
+function init() {
+  BLE.Scanner.Stop();
+  const scanConfig = { duration_ms: BLE.Scanner.INFINITE_SCAN, active: true };
+  
+  if (BLE.Scanner.Start(scanConfig)) {
+    BLE.Scanner.Subscribe(bleEventHandler);
+    print("Script working, turn OFF after: 40 sec.");
+  }
+}
+
+init();
