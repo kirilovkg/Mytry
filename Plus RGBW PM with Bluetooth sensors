@@ -1,7 +1,7 @@
 
 const MOTION_SENSORS = [
-  "f4:b3:b1:fa:14:7f".toLowerCase(),
-  "a0:63:b6:18:99:61".toLowerCase()
+  "11:33:55:77:99:aa".toLowerCase(),
+  "22:44:66:88:00:bb".toLowerCase()
 ];
 
 const OFF_DELAY = 40000; // 40 sec 
